@@ -1,0 +1,52 @@
+25. Printing statistics.
+
+=== picorv32 ===
+
+   Number of wires:              10834
+   Number of wire bits:          32630
+   Number of public wires:         919
+   Number of public wire bits:   10037
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:              13959
+     sky130_fd_sc_hd__a2111o1_2      2
+     sky130_fd_sc_hd__a2111oi_2      4
+     sky130_fd_sc_hd__a211o1_2     237
+     sky130_fd_sc_hd__a211oi_2     316
+     sky130_fd_sc_hd__a21o1_2      248
+     sky130_fd_sc_hd__a21oi_2     1049
+     sky130_fd_sc_hd__a221o1_2      21
+     sky130_fd_sc_hd__a22oi_2       12
+     sky130_fd_sc_hd__a311o_2        1
+     sky130_fd_sc_hd__a311oi_2     110
+     sky130_fd_sc_hd__a31o_2       348
+     sky130_fd_sc_hd__a31oi_2       69
+     sky130_fd_sc_hd__and2_2       459
+     sky130_fd_sc_hd__and2b_2       89
+     sky130_fd_sc_hd__and3_2        56
+     sky130_fd_sc_hd__and4_2        32
+     sky130_fd_sc_hd__conb_1         2
+     sky130_fd_sc_hd__dfxtp_2     1634
+     sky130_fd_sc_hd__inv_2       1595
+     sky130_fd_sc_hd__latch_1       89
+     sky130_fd_sc_hd__mux2_2      2365
+     sky130_fd_sc_hd__mux4_2       841
+     sky130_fd_sc_hd__nand2_2     1324
+     sky130_fd_sc_hd__nand3_2      856
+     sky130_fd_sc_hd__nor2_2       895
+     sky130_fd_sc_hd__nor3_2       362
+     sky130_fd_sc_hd__o2119ai_2     12
+     sky130_fd_sc_hd__o21ai_2      453
+     sky130_fd_sc_hd__o31ai_2       88
+     sky130_fd_sc_hd__or2_2        242
+     sky130_fd_sc_hd__xnor2_2      119
+     sky130_fd_sc_hd__xor2_2        29
+
+   Chip area for module '\picorv32': 285493.427200
+
+Warnings: 2 unique messages, 15 total
+Warning: Inferred latch for signal `\cpu_state_q` (missing default assignment in if-else)
+Warning: Cell \mem_ready is unmapped due to missing library definition.
+
+End of script. Logfile hash: 73b4e637a2

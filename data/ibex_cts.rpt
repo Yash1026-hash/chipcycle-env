@@ -1,0 +1,44 @@
+==========================================================================
+TritonCTS Clock Tree Synthesis Report
+Design: ibex_core
+Date: 2026-03-29 08:14:22
+Target Skew: 100 ps
+Tool: OpenROAD (commit e9baf87)
+==========================================================================
+
+[INFO CTS-0027] Generating H-Tree Topology for clock 'clk_i'
+[INFO CTS-0028] Analyzing 2483 flip-flop sinks...
+[INFO CTS-0030] 12 sink clusters identified.
+[INFO CTS-0040] Building clock tree...
+[INFO CTS-0045] Inserted 142 clock buffers (sky130_fd_sc_hd__clkbuf_4)
+[INFO CTS-0046] Inserted 8 clock inverters (sky130_fd_sc_hd__clkint_2)
+
+Clock Net Statistics:
+  Clock Net: clk_i
+  Max Level: 6
+  Min Level: 4
+  Leaf Buffers: 64
+  Max Fanout: 48 (sky130_fd_sc_hd__clkbuf_8)
+  Max Slew: 0.88 ns (Target: 1.50 ns) [MET]
+  Max Capacitance: 0.12 pF (Target: 0.30 pF) [MET]
+
+Insertion Delay Summary:
+  Min Insertion Delay: 0.820 ns
+  Max Insertion Delay: 1.075 ns
+  Average Insertion Delay: 0.940 ns
+
+Skew Analysis (between all sinks):
+  Global Skew: 255 ps
+
+Worst-Case Local Skew Pairs:
+  Launch:   id_stage_i/decoder_i/instr_valid_q_reg/CLK (Delay: 0.820 ns)
+  Capture:  ex_stage_i/alu_i/alu_result_q_reg[31]/CLK   (Delay: 1.075 ns)
+  Local Skew: 255 ps  [VIOLATED - Target: 100 ps]
+  Note: This skew directly impacts the critical setup margin between
+        the Instruction Decode (id) and Execution (ex) stages.
+
+[WARNING CTS-0050] Clock skew targets not met. Tree balancing algorithm
+                   terminated after 5 iterations due to placement congestion 
+                   in region X=[120.5:140.0], Y=[45.2:62.8].
+
+End of CTS Report.

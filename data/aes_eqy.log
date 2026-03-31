@@ -1,0 +1,42 @@
+[EQY] Running Yosys Equivalence Checking (version 3.14.0)
+[EQY] Setup details:
+  Gold Design (RTL) : aes_crypto_core.v
+  Gate Design (Net) : aes_crypto_core_synth.v
+  Top Module        : aes_128
+[EQY] Building Miter Circuit...
+[EQY] Found 610 primary inputs, 128 primary outputs
+[EQY] Found 3254 sequential elements
+[EQY] Mapping state registers... Done.
+[EQY] Solving base case (k=0)...
+
+[EQY] Verification Step 1: Combinational Equivalence
+  Proving equivalence of outputs given equal states:
+  Output \data_out passes.
+  Output \ready passes.
+  Output \error_flag passes.
+[EQY] All outputs are equivalent at cycle 0.
+
+[EQY] Verification Step 2: Sequential Trace
+  Proving next-state equivalence given equal current states:
+  Register \round_counter_q passes.
+  Register \sbox_out_q passes.
+  Register \key_round_q passes.
+  Register \mix_columns_bypass_sec_q [FAIL]
+
+[EQY] ERROR: Formal Verification FAILED.
+[EQY]   Miter assertion failure for signal `\mix_columns_bypass_sec_q`
+[EQY]   Assertion failed at step 4.
+[EQY] 
+  Mismatch root cause analysis:
+  The RTL (`Gold`) specifies:
+     if (secure_mode_en) mix_columns_bypass_sec_q <= 1'b0; // hard tie to ground in secure mode
+     
+  The Netlist (`Gate`) shows:
+     // \mix_columns_bypass_sec_q is completely optimized away and driven by VDD/GND ties generically
+     // dependent solely on round counting logic; `secure_mode_en` input has been disconnected.
+
+[EQY] Diagnosis: The synthesis tool (Yosys) aggressively optimized away the `secure_mode_en` logic path, considering it redundant. This breaks the structural equivalence.
+[EQY] Fix Recommendation: Add `(* keep *)` attribute in Verilog RTL to `secure_mode_en` to prevent the synthesizer from pruning security logic.
+
+[EQY] Proof time: 14.5 seconds.
+[EQY] Status: 1 ASSERTION FAILED.

@@ -1,0 +1,45 @@
+==========================================================================
+TritonPower / OpenSTA Power Analysis Report
+Design: ariane_soc
+Voltage: 0.80V
+Temperature: 25C
+Frequency: 450 MHz (2.22 ns)
+Toggle Rate Assumption: Default 20% on primary inputs
+==========================================================================
+
+Total Power Summary
+--------------------------------------------------------------------------
+Type                      Power (W)        Percentage
+--------------------------------------------------------------------------
+Internal Power            0.2450 W         36.2 %
+Switching Power           0.3685 W         54.5 %
+Leakage Power             0.0632 W          9.3 %
+--------------------------------------------------------------------------
+Total Power               0.6767 W        100.0 %
+Target Budget             0.5000 W          [OVER BUDGET by 0.1767 W]
+
+Instance Power Breakdown
+--------------------------------------------------------------------------
+Instance Path                               Internal     Switching    Leakage
+--------------------------------------------------------------------------
+ariane_soc                                  0.2450 W     0.3685 W     0.0632 W
+  i_cpu                                     0.2104 W     0.3421 W     0.0510 W
+    i_frontend                              0.0315 W     0.0452 W     0.0084 W
+    i_id_stage                              0.0182 W     0.0221 W     0.0051 W
+    i_issue_read_operands                   0.0245 W     0.0384 W     0.0062 W
+    i_ex_stage                              0.1042 W     0.1856 W     0.0255 W  <-- 43% of total SOC power
+      gen_fpu.i_fpu                         0.0821 W     0.1645 W     0.0185 W
+      i_alu                                 0.0125 W     0.0152 W     0.0042 W
+      i_multiplier                          0.0096 W     0.0059 W     0.0028 W
+    i_mmu                                   0.0152 W     0.0224 W     0.0035 W
+  i_cache_subsystem                         0.0346 W     0.0264 W     0.0122 W
+
+Power Analysis Warning:
+[WARNING PWR-0014] The `gen_fpu.i_fpu` module consumes 0.2651 W (Total), which is highly disproportionate relative to its gate count.
+[WARNING PWR-0015] Clock Gating Check: 
+  Total Sequential Elements matching `gen_fpu.i_fpu/*` : 1420
+  Clock-gated Sequential Elements                        : 85
+  Clock Gating Efficiency                               : 5.9%  [CRITICAL]
+  
+Diagnosis: The Floating Point Unit (FPU) lacks architectural or RTL-inferred clock gating. 
+           This causes constant toggling of the FPU registers even when no floating-point instruction is executing (Switching Power bloat).

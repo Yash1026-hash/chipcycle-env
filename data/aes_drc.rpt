@@ -1,0 +1,13 @@
+Magic DRC Summary Report for `aes_128`
+--------------------------------------------
+Total DRC errors found: 3
+--------------------------------------------
+
+Violation type: local interconnect spacing < 0.17um (li.1)
+Coordinates:
+(34.500, 112.300) - (34.610, 112.500)
+(89.200, 45.100) - (89.280, 45.300)
+
+Violation type: metal1 minimum area < 0.083um^2 (m1.6)
+Coordinates:
+(12.000, 24.000) - (12.200, 24.300)

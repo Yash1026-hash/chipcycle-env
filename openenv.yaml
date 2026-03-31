@@ -1,0 +1,85 @@
+name: chipcycle
+description: "AI Chip Design Sign-off Review Environment — trains agents to review ASIC design reports across synthesis, STA, and multi-corner sign-off"
+version: "1.0.0"
+author: "ChipCycle Team"
+tags:
+  - openenv
+  - reinforcement-learning
+  - chip-design
+  - vlsi
+  - eda
+  - timing-analysis
+  - physical-design
+
+environment:
+  type: http
+  entry_point: server.app:app
+  port: 7860
+
+tasks:
+  - id: synthesis_review
+    name: "Synthesis QoR Report Review"
+    difficulty: easy
+    description: "Review post-synthesis report for a UART controller. Find timing violations, unmapped cells, and design rule violations."
+    max_steps: 15
+
+  - id: sta_debug
+    name: "STA Timing Path Debug"
+    difficulty: medium
+    description: "Debug STA report for multi-clock SPI master. Identify real violations vs false paths, hold issues, and at-risk paths."
+    max_steps: 25
+
+  - id: signoff_triage
+    name: "Multi-Corner Multi-Mode Sign-off Triage"
+    difficulty: hard
+    description: "Triage full sign-off package for a pipelined DSP core across 4 PVT corners. Find 7 real issues, avoid red herrings, make tapeout recommendation."
+    max_steps: 35
+
+  - id: pd_em_ir_debug
+    name: "Physical Design: EM/IR & Congestion Debug"
+    difficulty: medium
+    description: "Analyze physical design sign-off reports for a GPU shader tile. Review Dynamic IR drop, Static IR drop, Electromigration (EM), and routing congestion."
+    max_steps: 20
+
+  - id: openroad_audit
+    name: "Authentic OpenROAD/Sky130 Audit"
+    difficulty: hard
+    description: "Audit a 100% authentic set of EDA log files from OpenLane/OpenROAD targeting SkyWater 130nm. Find 3 real issues in PicoRV32/AES logs."
+    max_steps: 25
+
+  - id: advanced_signoff
+    name: "Advanced Verification & Power Sign-off"
+    difficulty: hard
+    description: "Analyze TritonCTS clock skew, TritonPower consumption breakdowns, and Yosys EQY formal equivalence proofs to uncover deep architectural flaws."
+    max_steps: 25
+
+action_space:
+  type: structured
+  fields:
+    action_type:
+      type: string
+      enum: [analyze_section, check_constraint, compare_corners, propose_eco, submit_finding, submit_review]
+    section_name:
+      type: string
+    finding:
+      type: object
+    review:
+      type: object
+
+observation_space:
+  type: structured
+  fields:
+    report_overview:
+      type: string
+    section_content:
+      type: string
+    available_sections:
+      type: array
+    findings_submitted:
+      type: array
+    feedback:
+      type: string
+    done:
+      type: boolean
+    reward:
+      type: float
