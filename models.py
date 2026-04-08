@@ -6,7 +6,7 @@ Strictly compliant Action, Observation, and State Pydantic classes
 inheriting from openenv.core.env_server.types.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from pydantic import Field
 from openenv.core.env_server.types import Action, Observation, State
 
@@ -17,14 +17,14 @@ class ChipCycleAction(Action):
     An action the agent takes in the chip design review environment.
     """
     action_type: str = Field(description="Type of action to execute")
-    section_name: str = Field(default="", description="Section to analyze")
-    path_id: str = Field(default="", description="Timing path ID to investigate")
-    corner_a: str = Field(default="", description="PVT Corner A")
-    corner_b: str = Field(default="", description="PVT Corner B")
-    param: str = Field(default="", description="Parameter to compare")
+    section_name: Optional[str] = Field(default="", description="Section to analyze")
+    path_id: Optional[str] = Field(default="", description="Timing path ID to investigate")
+    corner_a: Optional[str] = Field(default="", description="PVT Corner A")
+    corner_b: Optional[str] = Field(default="", description="PVT Corner B")
+    param: Optional[str] = Field(default="", description="Parameter to compare")
     
-    finding: Dict[str, Any] = Field(default_factory=dict, description="Reported finding data")
-    review: Dict[str, Any] = Field(default_factory=dict, description="Final review data")
+    finding: Optional[Dict[str, Any]] = Field(default=None, description="Reported finding data")
+    review: Optional[Dict[str, Any]] = Field(default=None, description="Final review data")
 
 # ─── OBSERVATION ──────────────────────────────────────────────────────────
 

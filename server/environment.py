@@ -117,7 +117,7 @@ class ChipCycleEnvironment(Environment):
             max_steps=task["max_steps"],
         )
 
-    def step(self, action: ChipCycleAction) -> ChipCycleObservation:
+    def step(self, action: ChipCycleAction, timeout_s: Optional[float] = None, **kwargs) -> ChipCycleObservation:
         """
         Process one agent action and return the result.
 
@@ -135,6 +135,7 @@ class ChipCycleEnvironment(Environment):
         # Safety checks
         if self._state is None or self._task is None:
             return self._error_obs("Environment not initialized. Call reset() first.")
+        
         if self._state.is_done:
             return self._done_obs("Episode already finished.")
 

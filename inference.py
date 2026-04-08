@@ -17,6 +17,7 @@ import inspect
 import sys
 import time
 import os
+from typing import List, Optional
 
 try:
     import httpx
@@ -101,66 +102,83 @@ def env_state() -> dict:
     return data.get("state", data)
 
 
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_val = error if error else "null"
+    done_val = str(done).lower()
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        flush=True,
+    )
+
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+
+
 def run_deterministic_baseline(task_id: str) -> float:
     """Run a single task deterministically."""
-    print(f"\n[START] Task: {task_id}")
-    print(f"{'='*70}")
+    log_start(task=task_id, env="chipcycle", model=MODEL_NAME)
 
-    obs = env_reset(task_id)
-    print(f"[STEP: 0] Loaded Difficulty: {obs.get('difficulty', 'unknown')}")
+    try:
+        obs = env_reset(task_id)
+        findings = BASELINE_KNOWLEDGE_BASE.get(task_id, [])
+        rewards = []
+        steps_taken = 0
+        
+        for step_idx, f in enumerate(findings, 1):
+            action_str = f"submit_finding({f['issue_type']})"
+            res = env_step({"action_type": "submit_finding", "finding": f})
+            
+            reward = res.get("reward", 0.0)
+            done = res.get("done", False)
+            rewards.append(reward)
+            steps_taken = step_idx
+            
+            log_step(step=step_idx, action=action_str, reward=reward, done=done, error=None)
+            if done:
+                break
 
-    findings = BASELINE_KNOWLEDGE_BASE.get(task_id, [])
-    step = 1
-    for f in findings:
-        print(f"[STEP: {step}] Reporting {f['issue_type']} in {f['location'][:20]}...")
-        obs = env_step({"action_type": "submit_finding", "finding": f})
-        reward = obs.get("reward", 0.0)
-        print(f"    → Reward: {reward}")
-        step += 1
+        # Final review
+        if not obs.get("done", False):
+            steps_taken += 1
+            res = env_step({
+                "action_type": "submit_review",
+                "review": {"decision": "no-go", "blocking_issues": ["Design violations detected"], "summary": "Baseline assessment complete."}
+            })
+            reward = res.get("reward", 0.0)
+            rewards.append(reward)
+            log_step(step=steps_taken, action="submit_review", reward=reward, done=True, error=None)
 
-    print(f"[STEP: {step}] Submitting final review.")
-    env_step({
-        "action_type": "submit_review",
-        "review": {"decision": "no-go", "blocking_issues": ["Design violations detected"], "summary": "Baseline assessment complete."}
-    })
-
-    state = env_state()
-    score = state.get("current_score", 0.0)
-    
-    print(f"[END] Task {task_id} Score: {score:.4f}")
-    return score
+        state = env_state()
+        score = state.get("current_score", 0.0)
+        log_end(success=True, steps=steps_taken, score=score, rewards=rewards)
+        return score
+    except Exception as e:
+        log_end(success=False, steps=0, score=0.0, rewards=[])
+        raise e
 
 
 def main():
-    print("=" * 70)
-    print("  ChipCycle — Lightweight Deterministic Baseline")
-    print("  Mode: Reproducible Pipeline Validation")
-    print(f"  Env:  {API_BASE_URL}")
-    print("=" * 70)
-
     try:
         httpx.get(f"{API_BASE_URL}/health", timeout=10.0).raise_for_status()
-        print("  Status: Server Reachable ✓")
     except Exception as e:
-        print(f"  ERROR: Backend not responding at {API_BASE_URL}: {e}")
+        print(f"ERROR: Backend not responding at {API_BASE_URL}: {e}")
         sys.exit(1)
 
-    scores = {}
     for task_id in list(BASELINE_KNOWLEDGE_BASE.keys()):
         try:
-            scores[task_id] = run_deterministic_baseline(task_id)
+            run_deterministic_baseline(task_id)
         except Exception as e:
-            print(f"  ERROR during {task_id}: {e}")
-            scores[task_id] = 0.0
-
-    print(f"\n{'='*70}")
-    print("  BASELINE TRACES SUCCESSFUL")
-    print(f"{'='*70}")
-    for tid, score in scores.items():
-        print(f"  {tid:25s}  Score: {score:.4f}")
+            print(f"ERROR during {task_id}: {e}")
 
     return 0
 
 
 if __name__ == "__main__":
+    from typing import List, Optional
     main()
