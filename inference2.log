@@ -1,0 +1,6 @@
+======================================================================
+  ChipCycle — Lightweight Deterministic Baseline
+  Mode: Reproducible Pipeline Validation
+  Env:  http://localhost:7860
+======================================================================
+  ERROR: Backend not responding at http://localhost:7860: [Errno 61] Connection refused

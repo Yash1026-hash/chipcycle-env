@@ -31,6 +31,9 @@ dev = [
     "ruff>=0.1.0",
 ]
 
+[project.scripts]
+chipcycle-server = "server.app:main"
+
 [tool.uv.extra-build-dependencies]
 chipcycle = ["setuptools"]
 
