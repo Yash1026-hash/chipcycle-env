@@ -32,7 +32,7 @@ dev = [
 ]
 
 [project.scripts]
-chipcycle-server = "server.app:main"
+server = "server.app:main"
 
 [tool.uv.extra-build-dependencies]
 chipcycle = ["setuptools"]
