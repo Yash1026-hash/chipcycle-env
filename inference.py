@@ -83,23 +83,22 @@ BASELINE_KNOWLEDGE_BASE = {
 }
 
 
-def env_reset(task_id: str) -> dict:
-    resp = httpx.post(f"{API_BASE_URL}/reset", json={"task_id": task_id}, timeout=30.0)
-    resp.raise_for_status()
-    # Handle both wrapped OpenEnv response {"observation": {...}} and raw
-    data = resp.json()
-    return data.get("observation", data)
-
-
-def env_step(action: dict) -> dict:
-    resp = httpx.post(f"{API_BASE_URL}/step", json={"action": action}, timeout=30.0)
+async def env_reset(task_id: str, client: httpx.AsyncClient) -> dict:
+    resp = await client.post(f"{API_BASE_URL}/reset", json={"task_id": task_id}, timeout=60.0)
     resp.raise_for_status()
     data = resp.json()
     return data.get("observation", data)
 
 
-def env_state() -> dict:
-    resp = httpx.get(f"{API_BASE_URL}/state", timeout=30.0)
+async def env_step(action: dict, client: httpx.AsyncClient) -> dict:
+    resp = await client.post(f"{API_BASE_URL}/step", json={"action": action}, timeout=60.0)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("observation", data)
+
+
+async def env_state(client: httpx.AsyncClient) -> dict:
+    resp = await client.get(f"{API_BASE_URL}/state", timeout=60.0)
     resp.raise_for_status()
     data = resp.json()
     return data.get("state", data)
@@ -123,19 +122,19 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 
-def run_deterministic_baseline(task_id: str) -> float:
+async def run_deterministic_baseline(task_id: str, client: httpx.AsyncClient) -> float:
     """Run a single task deterministically."""
     log_start(task=task_id, env="chipcycle", model=MODEL_NAME)
 
     try:
-        obs = env_reset(task_id)
+        obs = await env_reset(task_id, client)
         findings = BASELINE_KNOWLEDGE_BASE.get(task_id, [])
         rewards = []
         steps_taken = 0
         
         for step_idx, f in enumerate(findings, 1):
             action_str = f"submit_finding({f['issue_type']})"
-            res = env_step({"action_type": "submit_finding", "finding": f})
+            res = await env_step({"action_type": "submit_finding", "finding": f}, client)
             
             reward = res.get("reward", 0.0)
             done = res.get("done", False)
@@ -149,15 +148,15 @@ def run_deterministic_baseline(task_id: str) -> float:
         # Final review
         if not obs.get("done", False):
             steps_taken += 1
-            res = env_step({
+            res = await env_step({
                 "action_type": "submit_review",
                 "review": {"decision": "no-go", "blocking_issues": ["Design violations detected"], "summary": "Baseline assessment complete."}
-            })
+            }, client)
             reward = res.get("reward", 0.0)
             rewards.append(reward)
             log_step(step=steps_taken, action="submit_review", reward=reward, done=True, error=None)
 
-        state = env_state()
+        state = await env_state(client)
         score = state.get("current_score", 0.0)
         log_end(success=True, steps=steps_taken, score=score, rewards=rewards)
         return score
@@ -166,26 +165,29 @@ def run_deterministic_baseline(task_id: str) -> float:
         raise e
 
 
-def main():
-    # Cold-start resilience: Wait up to 120s for the space to respond
-    try:
-        httpx.get(f"{API_BASE_URL}/health", timeout=120.0).raise_for_status()
-    except Exception as e:
-        print(f"ERROR: Backend not responding at {API_BASE_URL}: {e}")
-        sys.exit(1)
-
-    for task_id in list(BASELINE_KNOWLEDGE_BASE.keys()):
+async def main():
+    async with httpx.AsyncClient() as client:
+        # Cold-start resilience: Wait up to 120s for the space to respond
         try:
-            run_deterministic_baseline(task_id)
+            resp = await client.get(f"{API_BASE_URL}/health", timeout=120.0)
+            resp.raise_for_status()
         except Exception as e:
-            print(f"ERROR during {task_id}: {e}")
+            sys.stderr.write(f"ERROR: Backend not responding at {API_BASE_URL}: {e}\n")
+            return 1
+
+        for task_id in list(BASELINE_KNOWLEDGE_BASE.keys()):
+            try:
+                await run_deterministic_baseline(task_id, client)
+            except Exception as e:
+                sys.stderr.write(f"ERROR during {task_id}: {e}\n")
 
     return 0
 
 
 if __name__ == "__main__":
+    import asyncio
     try:
-        sys.exit(main())
+        sys.exit(asyncio.run(main()))
     except Exception as e:
-        print(f"CRITICAL: Unhandled exception in main: {e}")
+        sys.stderr.write(f"CRITICAL: Unhandled exception in main: {e}\n")
         sys.exit(1)
