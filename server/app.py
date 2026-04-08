@@ -22,7 +22,7 @@ env = ChipCycleEnvironment()
 
 # Wrap in OpenEnv SDK's native FastAPI server framework
 app = create_app(
-    env=env,
+    env=ChipCycleEnvironment,
     action_cls=ChipCycleAction,
     observation_cls=ChipCycleObservation,
     env_name="ChipCycle"

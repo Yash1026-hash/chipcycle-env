@@ -59,19 +59,17 @@ class ChipCycleEnvironment(Environment):
     #  PUBLIC API — These are the 3 functions required by OpenEnv spec
     # ══════════════════════════════════════════════════════════════════════
 
-    def reset(self, task_id: str = "synthesis_review") -> ChipCycleObservation:
+    def reset(self, seed: Optional[int] = None, episode_id: Optional[str] = None, **kwargs) -> ChipCycleObservation:
         """
         Start a fresh episode with a new design review task.
 
         Args:
-            task_id: Which task to load. Options:
-                - "synthesis_review"  (easy)  — Find bugs in a synthesis report
-                - "sta_debug"         (medium) — Debug timing analysis paths
-                - "signoff_triage"    (hard)   — Triage full multi-corner sign-off
-
-        Returns:
-            First observation with the report overview and available sections.
+            seed: Optional seed for randomization
+            episode_id: Optional unique identifier for the episode
+            kwargs: Must optionally contain 'task_id' or 'task_name' denoting the task to load.
         """
+        task_id = kwargs.get("task_id", kwargs.get("task_name", "synthesis_review"))
+        
         # Validate task_id, default to easy if invalid
         if task_id not in TASKS:
             task_id = "synthesis_review"
