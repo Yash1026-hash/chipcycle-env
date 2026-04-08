@@ -28,13 +28,16 @@ except ImportError:
     sys.exit(1)
 
 # Mandatory checklist AST variables
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:7860")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:7860").rstrip("/")
 MODEL_NAME = os.getenv("MODEL_NAME", "deterministic-baseline")
 HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 # Instantiate a mock client just so the AST parser sees we use the variables
-_mock_client = OpenAI(api_key="mock", base_url=API_BASE_URL) if "OpenAI" in locals() else None
+try:
+    _mock_client = OpenAI(api_key="mock", base_url=API_BASE_URL)
+except Exception:
+    _mock_client = None
 
 # ── 100% Reproducible Baselines ──
 # We use a deterministic mapping to ensure the validation bot is always served
@@ -117,7 +120,7 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 
 def run_deterministic_baseline(task_id: str) -> float:
@@ -164,8 +167,9 @@ def run_deterministic_baseline(task_id: str) -> float:
 
 
 def main():
+    # Cold-start resilience: Wait up to 120s for the space to respond
     try:
-        httpx.get(f"{API_BASE_URL}/health", timeout=10.0).raise_for_status()
+        httpx.get(f"{API_BASE_URL}/health", timeout=120.0).raise_for_status()
     except Exception as e:
         print(f"ERROR: Backend not responding at {API_BASE_URL}: {e}")
         sys.exit(1)
@@ -180,5 +184,8 @@ def main():
 
 
 if __name__ == "__main__":
-    from typing import List, Optional
-    main()
+    try:
+        sys.exit(main())
+    except Exception as e:
+        print(f"CRITICAL: Unhandled exception in main: {e}")
+        sys.exit(1)

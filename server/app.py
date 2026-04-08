@@ -9,16 +9,23 @@ as standard openenv routes (/reset, /step, /state) are used identically.
 
 import os
 import sys
+from pathlib import Path
 
 # Ensure the project root is on the path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(root_dir))
+
+# Startup Diagnostics
+try:
+    from server.environment import ChipCycleEnvironment
+    from models import ChipCycleAction, ChipCycleObservation
+    print(f"INFO: Application root is {root_dir}")
+    print("INFO: ChipCycle models and environment imported successfully.")
+except ImportError as e:
+    print(f"CRITICAL: Failed to import internal modules: {e}")
+    sys.exit(1)
 
 from openenv_core.env_server import create_app
-from server.environment import ChipCycleEnvironment
-from models import ChipCycleAction, ChipCycleObservation
-
-# Initialize core environment logic
-env = ChipCycleEnvironment()
 
 # Wrap in OpenEnv SDK's native FastAPI server framework
 app = create_app(
@@ -31,6 +38,7 @@ app = create_app(
 def main():
     import uvicorn
     port = int(os.environ.get("PORT", 7860))
+    print(f"INFO: Starting server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 
