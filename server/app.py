@@ -25,7 +25,7 @@ except ImportError as e:
     print(f"CRITICAL: Failed to import internal modules: {e}")
     sys.exit(1)
 
-from openenv_core.env_server import create_app
+from openenv.core.env_server import create_app
 
 # Wrap in OpenEnv SDK's native FastAPI server framework
 app = create_app(

@@ -32,7 +32,7 @@ from typing import Any, Dict, List, Optional
 from models import ChipCycleAction, ChipCycleObservation, ChipCycleState
 from server.graders import compute_episode_score, grade_finding, grade_review
 from server.tasks import TASKS
-from openenv_core.env_server.interfaces import Environment
+from openenv.core.env_server.interfaces import Environment
 
 class ChipCycleEnvironment(Environment):
     """
