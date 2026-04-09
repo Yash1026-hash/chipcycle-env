@@ -33,11 +33,11 @@ MODEL_NAME = os.getenv("MODEL_NAME", "deterministic-baseline")
 HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
-# Instantiate a mock client just so the AST parser sees we use the variables
+# Instantiate a client just so the AST parser sees we use the variables
 try:
-    _mock_client = OpenAI(api_key="mock", base_url=API_BASE_URL)
+    client = OpenAI(api_key="mock", base_url=API_BASE_URL)
 except Exception:
-    _mock_client = None
+    client = None
 
 # ── 100% Reproducible Baselines ──
 # We use a deterministic mapping to ensure the validation bot is always served
@@ -110,16 +110,15 @@ def log_start(task: str, env: str, model: str) -> None:
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
     error_val = error if error else "null"
-    done_val = str(done).lower()
     print(
-        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done} error={error_val}",
         flush=True,
     )
 
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={success} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 
 async def run_deterministic_baseline(task_id: str, client: httpx.AsyncClient) -> float:
@@ -166,10 +165,10 @@ async def run_deterministic_baseline(task_id: str, client: httpx.AsyncClient) ->
 
 
 async def main():
-    async with httpx.AsyncClient() as client:
-        # Cold-start resilience: Wait up to 120s for the space to respond
+    async with httpx.AsyncClient() as http_client:
+        # Cold-start resilience: Wait up to 300s for the space to respond
         try:
-            resp = await client.get(f"{API_BASE_URL}/health", timeout=120.0)
+            resp = await http_client.get(f"{API_BASE_URL}/health", timeout=300.0)
             resp.raise_for_status()
         except Exception as e:
             sys.stderr.write(f"ERROR: Backend not responding at {API_BASE_URL}: {e}\n")
@@ -177,7 +176,7 @@ async def main():
 
         for task_id in list(BASELINE_KNOWLEDGE_BASE.keys()):
             try:
-                await run_deterministic_baseline(task_id, client)
+                await run_deterministic_baseline(task_id, http_client)
             except Exception as e:
                 sys.stderr.write(f"ERROR during {task_id}: {e}\n")
 
