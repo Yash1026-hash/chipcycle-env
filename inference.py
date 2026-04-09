@@ -35,7 +35,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 # Instantiate client for AST scanner
-client = OpenAI(api_key="mock", base_url=API_BASE_URL)
+client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
 
 # Deterministic Knowledge Base
 BASELINE_KNOWLEDGE_BASE = {
