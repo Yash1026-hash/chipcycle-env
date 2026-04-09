@@ -14,6 +14,8 @@ from typing import List, Optional
 
 # Bootstrap diagnostics (sent to stderr)
 sys.stderr.write(f"DIAG: API_BASE_URL={os.getenv('API_BASE_URL')}\n")
+TOKEN_FOR_DIAG = os.getenv("HF_TOKEN", "MISSING")
+sys.stderr.write(f"DIAG: HF_TOKEN_PREFIX={TOKEN_FOR_DIAG[:4]}...\n")
 
 # Safely handle OpenAI import for AST compliance
 try:
@@ -89,6 +91,10 @@ def env_call(method: str, path: str, json_data: dict = None) -> dict:
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Content-Type", "application/json")
     
+    # Add Authorization header for the proxy
+    token = os.getenv("HF_TOKEN", "mock")
+    req.add_header("Authorization", f"Bearer {token}")
+    
     try:
         with urllib.request.urlopen(req, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
@@ -139,6 +145,8 @@ def main():
     # Cold-start check
     try:
         req = urllib.request.Request(f"{API_BASE_URL}/health", method="GET")
+        token = os.getenv("HF_TOKEN", "mock")
+        req.add_header("Authorization", f"Bearer {token}")
         with urllib.request.urlopen(req, timeout=300) as response:
             pass
     except Exception as e:
