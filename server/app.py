@@ -35,9 +35,15 @@ app = create_app(
     env_name="ChipCycle"
 )
 
+@app.get("/")
+def root():
+    return {"message": "ChipCycle RL Environment — OpenEnv Compliant", "status": "running"}
+
 def main():
     import uvicorn
-    port = int(os.environ.get("PORT", 7860))
+    # Strip any potential whitespace or colons from PORT env var
+    port_str = os.environ.get("PORT", "7860").strip().lstrip(":")
+    port = int(port_str)
     print(f"INFO: Starting server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
 
