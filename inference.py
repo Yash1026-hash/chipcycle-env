@@ -83,7 +83,16 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
         flush=True,
     )
 
+def clamp_score(s: float) -> float:
+    """Validator requires strictly 0 < score < 1."""
+    if s <= 0.0:
+        return 0.01
+    if s >= 1.0:
+        return 0.99
+    return s
+
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    score = clamp_score(score)
     rstr = ",".join(f"{r:.2f}" for r in rewards)
     print(
         f"[END] success={str(success).lower()} steps={steps} "
