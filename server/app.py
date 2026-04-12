@@ -1,10 +1,10 @@
 """
-ChipCycle - OpenEnv Compliant Server
-======================================
+ChipCycle - OpenEnv Compliant Server (Singleton Pattern)
+=========================================================
 
-This script uses the official `openenv_core` factory to spin up the API.
-This explicitly guarantees compliance with the Hackathon Evaluation Agent,
-as standard openenv routes (/reset, /step, /state) are used identically.
+The OpenEnv SDK's create_app creates a new env per HTTP request,
+which breaks stateful RL loops. This server uses a GLOBAL singleton
+environment so /reset → /step → /state all share the same instance.
 """
 
 import os
@@ -25,23 +25,75 @@ except ImportError as e:
     print(f"CRITICAL: Failed to import internal modules: {e}")
     sys.exit(1)
 
-from openenv.core.env_server import create_app
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Any, Dict, Optional
 
-# Wrap in OpenEnv SDK's native FastAPI server framework
-app = create_app(
-    env=ChipCycleEnvironment,
-    action_cls=ChipCycleAction,
-    observation_cls=ChipCycleObservation,
-    env_name="ChipCycle"
-)
+app = FastAPI(title="ChipCycle OpenEnv Server", version="1.0.0")
 
+# ── Global singleton environment ──────────────────────────────────────
+_env = ChipCycleEnvironment()
+
+# ── Request/Response models ───────────────────────────────────────────
+class ResetRequest(BaseModel):
+    task_id: str = "synthesis_review"
+
+class ActionRequest(BaseModel):
+    action: Dict[str, Any]
+
+# ── Routes ────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
     return {"message": "ChipCycle RL Environment — OpenEnv Compliant", "status": "running"}
 
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+@app.post("/reset")
+def reset(req: ResetRequest):
+    obs = _env.reset(task_id=req.task_id)
+    return {
+        "observation": obs.model_dump(),
+        "reward": obs.reward,
+        "done": obs.done,
+    }
+
+@app.post("/step")
+def step(req: ActionRequest):
+    action_data = req.action
+    action = ChipCycleAction(**action_data)
+    obs = _env.step(action)
+    return {
+        "observation": obs.model_dump(),
+        "reward": obs.reward,
+        "done": obs.done,
+    }
+
+@app.get("/state")
+def state():
+    s = _env.state
+    return s.model_dump()
+
+@app.get("/tasks")
+def tasks():
+    from server.tasks import TASKS
+    return {
+        tid: {"description": t["description"], "difficulty": t["difficulty"]}
+        for tid, t in TASKS.items()
+    }
+
+@app.get("/schema/action")
+def action_schema():
+    return ChipCycleAction.model_json_schema()
+
+@app.get("/schema/observation")
+def observation_schema():
+    return ChipCycleObservation.model_json_schema()
+
+
 def main():
     import uvicorn
-    # Strip any potential whitespace or colons from PORT env var
     port_str = os.environ.get("PORT", "7860").strip().lstrip(":")
     port = int(port_str)
     print(f"INFO: Starting server on port {port}")
